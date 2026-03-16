@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protergium | Control de Inventario</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div id="notification-container"></div>
+
+    <div id="login-screen" class="modal">
+        <div class="modal-content">
+            <div class="brand-header">
+                <h2>PROTERGIUM</h2>
+                <p>Gestión de Materias Primas</p>
+            </div>
+            <form id="form-login">
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="login-email" required placeholder="usuario@protergium.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-pass" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-save full-width">ENTRAR</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-interface" class="hidden">
+        <header>
+            <div class="logo-area">
+                <h1>Protergium</h1>
+                <span id="user-badge" class="badge-user">Cargando...</span>
+            </div>
+            <nav>
+                <button onclick="showSection('inventario')" class="nav-btn">Stock</button>
+                <button onclick="showSection('movimientos')" class="nav-btn">Movimientos</button>
+                <button onclick="showSection('historial')" class="nav-btn">Auditoría</button>
+                <button id="btn-logout" class="btn-logout">Salir</button>
+            </nav>
+        </header>
+
+        <main>
+            <section id="sec-inventario" class="content-section">
+                <div class="section-header">
+                    <h2>Inventario General</h2>
+                    <div class="controls">
+                        <input type="text" id="search-input" placeholder="🔍 Buscar producto o lote..." class="search-bar">
+                        <select id="filter-sector" class="select-modern">
+                            <option value="Todos">Todos los Sectores</option>
+                            <option value="PROD">Producción</option>
+                            <option value="ID">I+D</option>
+                            <option value="BM">BioMolecular</option>
+                            <option value="DEP">Depósito</option>
+                        </select>
+                        <button id="btn-export" class="btn-secondary">Generar PDF</button>
+                    </div>
+                </div>
+                
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Lote</th>
+                                <th>Vencimiento</th>
+                                <th>Sector</th>
+                                <th>Cantidad</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-stock"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="sec-movimientos" class="content-section hidden">
+                <div class="grid-layout">
+                    <div class="card">
+                        <h3>📥 Nuevo Ingreso</h3>
+                        <form id="form-alta">
+                            <div class="form-group">
+                                <label>Nombre MP</label>
+                                <input type="text" id="nombre" required style="text-transform: uppercase;">
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Lote</label>
+                                    <input type="text" id="lote" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Sector</label>
+                                    <select id="sector" required>
+                                        <option value="PROD">Producción</option>
+                                        <option value="ID">I+D</option>
+                                        <option value="BM">BioMolecular</option>
+                                        <option value="DEP">Depósito</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Cantidad</label>
+                                    <input type="number" id="cantidad" step="any" min="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Unidad</label>
+                                    <select id="unidad">
+                                        <option value="Kg">Kg</option><option value="g">g</option>
+                                        <option value="L">L</option><option value="mL">mL</option>
+                                        <option value="Un">Un</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Vencimiento</label>
+                                <input type="date" id="vence" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Registrar en DB</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3>↔️ Traspaso / Consumo</h3>
+                        <form id="form-traspaso">
+                            <div class="form-group">
+                                <label>Seleccionar Producto (Origen)</label>
+                                <select id="select-materia" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Sector Destino</label>
+                                <select id="sector-destino" required>
+                                    <option value="PROD">Producción</option>
+                                    <option value="ID">I+D</option>
+                                    <option value="BM">BioMolecular</option>
+                                    <option value="DEP">Depósito</option>
+                                    <option value="CONSUMIDO">-- Marcar como Consumido --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cantidad a Mover</label>
+                                <input type="number" id="cant-traspaso" step="any" min="0.01" required>
+                            </div>
+                            <button type="submit" class="btn-accent">Ejecutar Movimiento</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-historial" class="content-section hidden">
+                <div class="section-header">
+                    <h2>Log de Auditoría</h2>
+                </div>
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Acción</th>
+                                <th>Detalle</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-historial"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
